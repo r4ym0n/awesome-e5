@@ -76,6 +76,7 @@ Hovatek 等资料指出：E5 在出厂 Android 上 **无** 物理按键组合进
 
 ## 相关链接
 
+- [OpenWrt 专项（e5-linux 教程与刷机步骤）](openwrt.md)
 - [老人机刷上 openwrt 改造随身 WiFi — 荣悦 E5（B站）](https://www.bilibili.com/video/BV1htpJ6NECu/)
 - [荣悦 E5 刷机 + UFI-TOOLS（B站）](https://www.bilibili.com/video/BV1e65y69E3L/)
 - [Hovatek — Unisoc T158 / RongYue E5](https://www.hovatek.com/forum/thread-49605.html)

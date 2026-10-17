@@ -17,7 +17,8 @@
 - [UFI-TOOLS 与随身 WiFi 玩法](#ufi-tools-与随身-wifi-玩法)
 - [Root / Magisk / KernelSU](#root--magisk--kernelsu)
 - [进阶 ROM 与移植（Flyme / KernelSU-Next）](#进阶-rom-与移植flyme--kernelsu-next)
-- [OpenWrt 与其它路线](#openwrt-与其它路线)
+- [OpenWrt 专项](#openwrt-专项)
+- [OpenWrt 与其它路线（摘要）](#openwrt-与其它路线摘要)
 - [频段与作为 MiFi 的参考](#频段与作为-mifi-的参考)
 - [通用展锐教程（可借鉴）](#通用展锐教程可借鉴)
 - [相关 GitHub 项目](#相关-github-项目)
@@ -160,12 +161,21 @@ UFI-TOOLS 最初面向中兴 F50 / U30 Air（T760），但社区已在 T158 的�
 
 适合已有展锐刷机经验、且接受 Flyme 移植风险的用户；**内存改版（如 4GB）** 与标准 2G/3G 机是否适用请以帖内标注为准。
 
-## OpenWrt 与其它路线
+## OpenWrt 专项
 
-- 入门视频：[老人机刷上 openwrt 改造随身 WiFi — 荣悦 E5](https://www.bilibili.com/video/BV1htpJ6NECu/)（e5-linux 整包 + QuTick102 `spd_dump`）。
-- 社区有在荣悦 E5 上探索 **OpenWrt / 软路由** 的讨论，但 T158 生态明显弱于 T760（中兴 F50）等平台；选型参考 [什么值得买：T158 vs T760](https://post.smzdm.com/p/agg58n3m/)。
-- 若目标是「长期可维护的 5G 路由」，许多玩家最终会选择 F50 等成熟平台；E5 更适合低价尝鲜。
-- 在 Mac 上刷 e5-linux：见 **[macOS 刷机说明](docs/macos-flashing.md)**（可用，但不建议作为主环境）。
+如何把荣悦 E5 刷成 OpenWrt 向系统（社区 **e5-linux** 整包，非 openwrt.org 官方镜像）的教程、工具与 Windows 操作逻辑，见：
+
+**[docs/openwrt.md](docs/openwrt.md)**
+
+- 主视频：[BV1htpJ6NECu — 老人机刷 openwrt 改造随身 WiFi](https://www.bilibili.com/video/BV1htpJ6NECu/)
+- 刷机环境：建议 **Windows**；Mac 见 [macos-flashing.md](docs/macos-flashing.md)
+
+## OpenWrt 与其它路线（摘要）
+
+- 荣悦 E5 = **T158 + e5-linux 整包替换**；中兴 F50 = **T760 + 另一套 OpenWrt 生态**，固件与工具 **不可混用**。
+- 选型：[T158 vs T760](https://post.smzdm.com/p/agg58n3m/) · [E5 / F50 三条线](https://post.smzdm.com/p/avgprw87/)
+- 勿与 **Reyee AX3200 E5 路由器**（MT7622，[上游 OpenWrt 已支持](https://github.com/openwrt/openwrt/pull/10951)）混淆。
+- 长期重度插件用户多数倾向 F50；E5 适合低价尝鲜，系统迭代快，需接受实验性。
 
 ## 频段与作为 MiFi 的参考
 
