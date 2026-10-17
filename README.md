@@ -12,6 +12,7 @@
 - [视频教程（中文）](#视频教程中文)
 - [图文与评测](#图文与评测)
 - [固件与资源网盘](#固件与资源网盘)
+- [刷机环境：macOS 是否可用？](#刷机环境macos-是否可用)
 - [刷机工具（展锐 / spd_dump）](#刷机工具展锐--spd_dump)
 - [UFI-TOOLS 与随身 WiFi 玩法](#ufi-tools-与随身-wifi-玩法)
 - [Root / Magisk / KernelSU](#root--magisk--kernelsu)
@@ -97,6 +98,14 @@
 
 网盘链接可能随时间失效，欢迎在 Issue 中提交可用镜像。
 
+## 刷机环境：macOS 是否可用？
+
+**可用，但不建议。**
+
+深刷与 e5-linux / OpenWrt 整包在 macOS 上可通过 LibUSB 版 `spd_dump` 等工具完成，但社区教程与 QuTick102 一键包以 Windows 为主；首次刷机更推荐 Windows 或虚拟机。Android 侧 `adb`、UFI-TOOLS macOS 安装器相对友好。
+
+详见：**[docs/macos-flashing.md](docs/macos-flashing.md)**（能力对照、推荐工具、与 e5-linux 的配合方式）。
+
 ## 刷机工具（展锐 / spd_dump）
 
 | 工具 | 链接 | 说明 |
@@ -107,6 +116,8 @@
 | **spreadtrum_flash**（ilyakurdyukov） | https://github.com/ilyakurdyukov/spreadtrum_flash/releases | 另一套维护与 `spd_dump64.zip` |
 | **SPRDClient** | https://github.com/YC-nw | 展锐工具链作者（社区致谢） |
 | **紫光 USB 驱动** | 各教程包内常带 `SPRD_Driver_R4.x`；亦见 [Unisoc.md 配套驱动说明](https://github.com/ig25138/KDXF-LEAKiNG-Project/blob/main/Unisoc.md) | Windows 刷机前安装 |
+| **spd_dump-macos** | https://github.com/xun404/spd_dump-macos | T158 验证的 macOS 移植；见 [macOS 刷机说明](docs/macos-flashing.md) |
+| **sfd_tool** | https://github.com/C-Hidery/sfd_tool | 跨平台（含 macOS）展锐维护工具 |
 
 常用命令形态（仅作索引，**以工具 `--help` 为准**）：
 
@@ -151,8 +162,10 @@ UFI-TOOLS 最初面向中兴 F50 / U30 Air（T760），但社区已在 T158 的�
 
 ## OpenWrt 与其它路线
 
+- 入门视频：[老人机刷上 openwrt 改造随身 WiFi — 荣悦 E5](https://www.bilibili.com/video/BV1htpJ6NECu/)（e5-linux 整包 + QuTick102 `spd_dump`）。
 - 社区有在荣悦 E5 上探索 **OpenWrt / 软路由** 的讨论，但 T158 生态明显弱于 T760（中兴 F50）等平台；选型参考 [什么值得买：T158 vs T760](https://post.smzdm.com/p/agg58n3m/)。
 - 若目标是「长期可维护的 5G 路由」，许多玩家最终会选择 F50 等成熟平台；E5 更适合低价尝鲜。
+- 在 Mac 上刷 e5-linux：见 **[macOS 刷机说明](docs/macos-flashing.md)**（可用，但不建议作为主环境）。
 
 ## 频段与作为 MiFi 的参考
 
