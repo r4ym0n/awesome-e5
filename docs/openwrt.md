@@ -140,6 +140,139 @@ flowchart TD
 
 ---
 
+## 实刷验证记录（TF 卡方案）
+
+以下为一次**真实完整安装**的验证结果，可作为预期参考。完整过程见
+[field-notes-full-walkthrough.md](field-notes-full-walkthrough.md)。
+
+### 环境与结果
+
+| 项 | 实测值 |
+| --- | --- |
+| 安装方式 | `--tf`（装到 TF 卡），Android 原样保留 |
+| TF 卡 | 14.8 GB（清理后整卡使用，无分区表） |
+| 安装耗时 | **274 秒** |
+| 写入镜像 | `openwrt.ext4.gz` 163 MiB → 解压后 2 GiB，扩容到 14.84 GiB |
+| 启动镜像 | `boot.img` 64 MiB → 写入 `boot_b` 并回读校验 |
+| 设备文件 | 60.6 MB（14 个 vendor 固件/基带文件，从本机提取） |
+| 结果系统 | `OpenWrt 25.12.5 r33051-f5dae5ece4`，内核 `6.18.54-e5-mobile4` |
+| 板型 | `Unisoc UMS9621-base Board` |
+| 管理地址 | `http://192.168.9.1`（LuCI，Aurora 主题） |
+| 默认账号 | `root` / `root` |
+| 热点 | `E5-OpenWrt`，信道 `149` |
+| 开放端口 | `:22` SSH、`:80` HTTP、`:443` HTTPS、`:53` DNS |
+
+### 安装器阶段划分（9 步）
+
+```
+[1/9] 连接设备 + 启动链检查（BOOTCHAIN-PLAN a b）
+[2/9] 准备 SD 卡（14.84 GiB，不预留 OTA 空间）
+[3/9] 从设备提取固件和基带 + 解压镜像（163 MiB）
+[4/9] 写入 OpenWrt（181 s）+ 回读校验（29 s）+ 扩容
+[5/9] 写入本机设置和设备文件（60.6 MB）
+[6/9] 写入 boot_b 并校验 + 备份 misc 32 字节控制块
+[7/9] 完成，提示手动重启
+```
+
+### CLI 用法（无图形界面时）
+
+```powershell
+# 只校验包，不碰设备
+.\tools\backend\openwrt-backend.exe --cli --package-root . --no-pause --verify-package
+
+# 只检查设备与前置条件，不写分区
+.\tools\backend\openwrt-backend.exe --cli --package-root . --no-pause --check
+
+# 正式安装到 TF 卡
+.\tools\backend\openwrt-backend.exe --cli --package-root . --no-pause --tf --ssid "E5-OpenWrt" -y
+```
+
+`--check` 的预期输出片段：
+
+```
+[1/3] 连接设备 / looking for Android (USB debugging on)
+   ok (E5, root via su)
+BOOTCHAIN-PLAN a b
+[3/3] 检查完成，未修改分区 / checked; no partitions changed
+```
+
+### 两个必须知道的坑
+
+**1. TF 卡有分区会导致安装失败**
+
+安装器**优先使用卡的第一个分区**，只有无分区时才用整卡。若 `p1` 很小（例如带树莓派系统的卡
+`p1` 只有 46 MB），会报：
+
+```
+错误 / error: SD capacity is insufficient: /dev/block/mmcblk1 has 43.9 MiB;
+the image requires 2048.0 MiB (minimum supported card: 2048 MiB). Nothing was written.
+```
+
+解决：清空分区表让安装器看到整卡。
+
+```sh
+#!/system/bin/sh
+for v in $(sm list-volumes all | awk '$2=="mounted"{print $1}'); do sm unmount "$v"; done
+sleep 2
+dd if=/dev/zero of=/dev/block/mmcblk1 bs=1M count=16          # 前 16 MB（MBR/GPT 主表）
+sync
+SECTORS=$(( $(blockdev --getsize64 /dev/block/mmcblk1) / 512 ))
+dd if=/dev/zero of=/dev/block/mmcblk1 bs=512 seek=$((SECTORS-32)) count=32   # 尾部 GPT 备份
+sync
+blockdev --flushbufs /dev/block/mmcblk1
+blockdev --rereadpt /dev/block/mmcblk1
+```
+
+清完 `cat /proc/partitions | grep mmcblk1` 应只剩 `mmcblk1` 一行。
+
+**2. 第一次重启可能回到 Android**
+
+安装器写入的是「试启动」标记。若首次启动失败，设备会在两次尝试后**自动回退 Android**。
+实测第一次重启回到了 Android，**再重启一次**才进入 OpenWrt。所以第一次没进去不必紧张。
+
+### 卡上的关键文件
+
+`/etc/e5/install.conf`：
+
+```sh
+E5_APN=''
+E5_WIFI_SSID='E5-OpenWrt'
+E5_WIFI_KEY='<安装时生成>'
+E5_WIFI_CHANNEL='149'
+E5_DEFAULT_BOOT='linux'
+```
+
+`/etc/e5/sd-root` 标记：`e5-openwrt-sd <日期> <boot 短哈希>`
+
+### 双系统切换
+
+切换靠 `misc` 分区偏移 2048 处的 **32 字节 AOSP 启动控制块**（展锐私有 `BCAB` 格式）。
+
+| 方向 | 方式 |
+| --- | --- |
+| OpenWrt → Android | 屏幕 → 高级 → 系统 → 下次启动 Android |
+| OpenWrt → Android | SSH：`e5-next-boot android && reboot` |
+| Android → OpenWrt | 切换器 App `com.minikano.e5switch`（包内 `extras/android/op-system-switcher.apk`） |
+
+`e5-bootctl` 支持的动作：`android` / `linux` / `sd` / `arm` / `trial`。
+
+**没有 recovery 入口**：70 个分区里没有 `recovery`，且用私有格式而非 AOSP 标准 AB，
+因此也没有标准 `bootctl`。
+
+### 硬件限制（重要）
+
+**单 WiFi 射频，不支持 STA+AP 并发**：
+
+```sh
+ls /sys/class/net/ | grep wlan                 # 只有 wlan0
+dumpsys wifi | grep num_concurrent_connection  # 0
+cmd wifi start-softap <SSID> open              # SAP is disabled
+```
+
+→ **不能当 WiFi 中继**（连上游 WiFi 再转发），只能当「SIM 5G → WiFi 热点」。
+这是射频硬件限制，**换 OpenWrt 也解决不了**。
+
+内存 **1.4 GB**（可用约 405 MB），Docker 等重度场景不现实。
 ## 已知限制与风险（刷前必读）
 
 - **变砖**：错误 FDL、中断刷写、混用他机分区表可能导致无法开机；依赖备份与 BROM 救砖经验。
@@ -153,6 +286,7 @@ flowchart TD
 
 - 主 README：[../README.md](../README.md)
 - macOS 环境：[macos-flashing.md](macos-flashing.md)
+- 完整实刷记录（含备份/刷机/root/双系统全流程）：[field-notes-full-walkthrough.md](field-notes-full-walkthrough.md)
 - 发现新教程、稳定 GitHub 镜像或勘误，请 PR 修改本页或开 Issue。
 
 **免责声明**：本页为资料索引，不构成对任何固件安全性的担保；刷机后果自负。
