@@ -1,0 +1,11 @@
+{
+  "name": "awesome-e5",
+  "private": true,
+  "scripts": {
+    "lint": "awesome-lint"
+  },
+  "devDependencies": {
+    "awesome-lint": "^1.2.0",
+    "remark-cli": "^12.0.1"
+  }
+}
