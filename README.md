@@ -9,6 +9,7 @@
 - [机型概览](#机型概览)
 - [硬件与批次说明](#硬件与批次说明)
 - [入门：你想做什么？](#入门你想做什么)
+- [完整实刷记录（原厂 → Magisk → UFI-TOOLS → OpenWrt）](#完整实刷记录原厂--magisk--ufi-tools--openwrt)
 - [视频教程（中文）](#视频教程中文)
 - [图文与评测](#图文与评测)
 - [固件与资源网盘](#固件与资源网盘)
@@ -57,7 +58,66 @@
 | 仅 Root（展瑞老头乐通用思路） | [B站：紫光5G老头乐 Root](https://www.bilibili.com/video/BV1woo9BPEmg/) + Magisk 资源见视频简介网盘 |
 | 深刷 / 备份全分区 | Windows + 展锐驱动 + `spd_dump`，**先全盘备份**再写入 |
 | 重度移植（Flyme / KernelSU-Next） | [Hovatek T158 线程](https://www.hovatek.com/forum/thread-49605.html)（含荣悦 E5 关键词，资源在帖内） |
+| **想知道完整流程长什么样** | [完整实刷记录](docs/field-notes-full-walkthrough.md)：从原厂到双系统的每一步真实命令、输出与坑位 |
 
+## 完整实刷记录（原厂 → Magisk → UFI-TOOLS → OpenWrt）
+
+**[docs/field-notes-full-walkthrough.md](docs/field-notes-full-walkthrough.md)** — 一台原厂 E5 的全程实刷记录，按实际执行顺序编写，含真实命令、预期输出、判断依据与全部踩坑。
+
+覆盖内容：
+
+| 阶段 | 要点 |
+| --- | --- |
+| 环境与物料 | 官改 V4 包结构（`bin/` + `data/` 31 个镜像）、e5-tools、OpenWrt 整包、两个模块 |
+| **BROM 三阶段认知** | `bootrom → FDL1 → FDL2`；FDL1/FDL2 是内存程序，**只有取电池断电才清掉** |
+| 装驱动 | `pnputil /add-driver …sprdvcom.inf /install`，`PID_4D00` = `USBCOMM_DL` |
+| 全分区备份 | `--kickto 2 exec_addr2 0x65017f08 … r all reset`，实测 68 文件 / 6.7 GB / 70 个分区 |
+| 刷官改 V4 | `write_parts data\ e userdata verity 0`，实测 274 秒；全零镜像的正确判断方法 |
+| Magisk root | 用**当前系统**的 `init_boot` 打补丁，`ANDROID!` magic 校验，BROM 写回 |
+| UFI-TOOLS | 模块自动装 APK + `system.prop`（`ro.debuggable=1`、`tcp.port=5555`）+ sepolicy permissive |
+| 热点优化 | `apx/` bind mount 替换 `TetheringGoogle.apk` / `service-wifi.jar` / `NetworkStackGoogle.apk` |
+| OpenWrt 双系统 | TF 卡整卡写入、`boot_b` 写内核、`misc` 32 字节控制块 |
+| **双系统切换** | `misc` 偏移 2048 的 BCAB 结构逐字节解析、CRC32、三种切换方式 |
+
+### 几条最有价值的实测结论
+
+**1. 这台机器不支持 WiFi 中继（STA+AP 并发）**
+
+```
+ls /sys/class/net/ | grep wlan     →  只有 wlan0
+dumpsys wifi | grep num_concurrent →  num_concurrent_connection: 0
+cmd wifi start-softap …            →  SAP is disabled
+```
+
+单射频硬件限制，**刷 OpenWrt 也改变不了**。它只能当「SIM 5G → WiFi 热点」，不能当「WiFi 中继」。
+
+**2. 内存只有 1.4 GB（可用约 405 MB）**
+
+Docker、重度服务基本不现实。
+
+**3. ROM 里的全零镜像不是损坏**
+
+`dtb_a` / `hypervsior_a` / `common_rs2_a` / `avbmeta_rs_a` 在 ROM 里是全零，
+但**真机对应分区本来也是全零** —— 这只能通过先做备份对比才能确认。
+
+**4. 刷机中断是「半刷状态」**
+
+刷到 `super` 前掉线会必然开不了机（引导链已改但系统没写）。
+处理：**取电池断电 → 重新进 BROM → 从头完整重刷**，`write_parts` 幂等。
+
+**5. OpenWrt 第一次重启可能回退**
+
+试启动失败会回退 Android，**再重启一次**即可进入。
+
+**6. TF 卡有分区会导致安装失败**
+
+安装器优先用「第一分区」；若 `p1` 只有几十 MB，会报
+`SD capacity is insufficient`。解决：清空分区表让安装器看到整卡。
+
+### 没有 recovery 入口
+
+70 个分区里**没有 `recovery`**；这台机器用展锐私有 `BCAB` 格式而非 AOSP 标准 AB，
+所以也没有标准 `bootctl`。切换靠 `misc` 控制块 + `e5-bootctl`（支持 `android`/`linux`/`sd`/`arm`/`trial`）。
 ### 进入 BROM / 下载模式（常见说法）
 
 社区多条教程一致描述：
