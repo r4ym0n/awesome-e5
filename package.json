@@ -6,6 +6,7 @@
   },
   "devDependencies": {
     "awesome-lint": "^1.2.0",
+    "prettier": "^3.9.10",
     "remark-cli": "^12.0.1"
   }
 }

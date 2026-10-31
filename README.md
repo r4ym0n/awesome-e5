@@ -9,6 +9,8 @@
 - [机型概览](#机型概览)
 - [硬件与批次说明](#硬件与批次说明)
 - [入门](#入门)
+- [完整实刷记录（原厂 → Magisk → UFI-TOOLS → OpenWrt）](#完整实刷记录原厂--magisk--ufi-tools--openwrt)
+- [Agent Skill：一键刷机](#agent-skill一键刷机)
 - [视频教程(中文)](#视频教程中文)
 - [图文与评测](#图文与评测)
 - [固件与资源网盘](#固件与资源网盘)
@@ -70,6 +72,148 @@
 ### 刷机前建议备份的分区(展锐通用)
 
 参考社区展锐深刷文档,至少关注:`splloader`、`uboot`、`sml`、`trustos`、`vbmeta`、`boot`、`recovery`、`system` 等;条件允许时使用 `r all` 或包内一键备份脚本做全分区备份,详见 [KDXF-LEAKiNG Unisoc.md](https://github.com/ig25138/KDXF-LEAKiNG-Project/blob/main/Unisoc.md)。
+
+## 完整实刷记录（原厂 → Magisk → UFI-TOOLS → OpenWrt）
+
+**[docs/field-notes-full-walkthrough.md](https://github.com/r4ym0n/awesome-e5/blob/main/docs/field-notes-full-walkthrough.md)** — 一台原厂 E5 的全程实刷记录，按实际执行顺序编写，含真实命令、预期输出、判断依据与全部踩坑。
+
+覆盖内容：
+
+| 阶段                | 要点                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| 环境与物料          | 官改 V4 包结构（`bin/` + `data/` 31 个镜像）、e5-tools、OpenWrt 整包、两个模块               |
+| **BROM 三阶段认知** | `bootrom → FDL1 → FDL2`；FDL1/FDL2 是内存程序，**只有取电池断电才清掉**                      |
+| 装驱动              | `pnputil /add-driver …sprdvcom.inf /install`，`PID_4D00` = `USBCOMM_DL`                      |
+| 全分区备份          | `--kickto 2 exec_addr2 0x65017f08 … r all reset`，实测 68 文件 / 6.7 GB / 70 个分区          |
+| 刷官改 V4           | `write_parts data\ e userdata verity 0`，实测 274 秒；全零镜像的正确判断方法                 |
+| Magisk root         | 用**当前系统**的 `init_boot` 打补丁，`ANDROID!` magic 校验，BROM 写回                        |
+| UFI-TOOLS           | 模块自动装 APK + `system.prop`（`ro.debuggable=1`、`tcp.port=5555`）+ sepolicy permissive    |
+| 热点优化            | `apx/` bind mount 替换 `TetheringGoogle.apk` / `service-wifi.jar` / `NetworkStackGoogle.apk` |
+| OpenWrt 双系统      | TF 卡整卡写入、`boot_b` 写内核、`misc` 32 字节控制块                                         |
+| **双系统切换**      | `misc` 偏移 2048 的 BCAB 结构逐字节解析、CRC32、三种切换方式                                 |
+
+## Agent Skill：一键刷机
+
+**[skills/rongyue-e5-flash/](https://github.com/r4ym0n/awesome-e5/tree/main/skills/rongyue-e5-flash)** — 把上面的完整流程封装成**可被 AI agent 直接调用**的 skill。
+
+### 它能做什么
+
+| 命令                              | 作用                                 |
+| --------------------------------- | ------------------------------------ |
+| `detect`                          | 环境 / 驱动 / 设备 / 磁盘检查        |
+| `wait-brom`                       | 等 BROM 出现（200 ms 轮询）          |
+| `backup`                          | 全分区备份 + 自动校验闸门            |
+| `flash -Mode full\|keepdata\|raw` | 刷机 / 增量 / 从备份还原             |
+| `flash-initboot`                  | 写 Magisk 补丁后的 `init_boot_a`     |
+| `magisk-prepare` / `magisk-fetch` | 推原始镜像 / 拉补丁镜像并校验 magic  |
+| `magisk-install`                  | 装 Magisk 模块（自动处理中文文件名） |
+| `openwrt-tf [-CheckOnly]`         | OpenWrt 装 TF 卡                     |
+| `wipe-tf`                         | 清 TF 分区表                         |
+| `probe`                           | 设备能力探测（内存 / WiFi / 工具）   |
+| `verify [-Full]`                  | root / 解锁 / 属性 / 端口验证        |
+| `reboot`                          | 重启并等待开机完成                   |
+
+### 快速开始
+
+```powershell
+# 引导式全流程（交互确认）
+./scripts/quickstart.ps1 -Rom E:\e5flash\rom
+
+# 或逐步执行
+./scripts/e5.ps1 detect -Rom E:\e5flash\rom
+./scripts/e5.ps1 backup -Out E:\e5flash\backup\20261031
+./scripts/e5.ps1 flash  -Rom E:\e5flash\rom -Mode full
+./scripts/e5.ps1 verify
+```
+
+### 内置的安全闸门
+
+这个 skill 不是「一把梭」脚本，每个写操作前都会校验：
+
+1. 备份未完成 → 拒绝刷机
+2. 镜像名必须与真实分区名一一对应，否则拒绝
+3. 全零镜像会列出来要求对照备份，不盲目写入
+4. 设备必须在 BROM，否则等待或拒绝
+5. 刷完检查 `target == written`，检测截断
+6. 检测到 `device removed` 立即提示断电重刷，不让 agent 误以为成功
+
+### 文件结构
+
+```
+skills/rongyue-e5-flash/
+├─ SKILL.md                        # 主文档（agent 读这个）
+├─ scripts/
+│  ├─ e5.ps1                       # 单入口 CLI（13 个子命令）
+│  └─ quickstart.ps1               # 引导式全流程
+└─ references/
+   ├─ materials.md                 # 物料清单与目录结构
+   ├─ partition-table.md           # 70 个分区完整表
+   ├─ boot-control.md              # misc BCAB 32 字节结构 + CRC32
+   └─ troubleshooting.md           # 完整故障手册
+```
+
+### 给 agent 的纪律（写在 SKILL.md 里）
+
+- 备份没做完，不许写任何分区
+- 每次进 BROM 前先确认不在 FDL1 残留状态
+- 刷机中断先断电重进，再完整重刷，不「接着刷」
+- 全零镜像先对照备份再下结论
+- 中文路径 / 文件名是高频坑
+- 不要承诺 WiFi 中继(硬件限制)
+
+### 几条最有价值的实测结论
+
+1. 这台机器不支持 WiFi 中继(STA+AP 并发)
+
+```
+ls /sys/class/net/ | grep wlan     →  只有 wlan0
+dumpsys wifi | grep num_concurrent →  num_concurrent_connection: 0
+cmd wifi start-softap …            →  SAP is disabled
+```
+
+单射频硬件限制，**刷 OpenWrt 也改变不了**。它只能当「SIM 5G → WiFi 热点」，不能当「WiFi 中继」。
+
+2. 内存只有 1.4 GB(可用约 405 MB)
+
+Docker、重度服务基本不现实。
+
+3. ROM 里的全零镜像不是损坏
+
+`dtb_a` / `hypervsior_a` / `common_rs2_a` / `avbmeta_rs_a` 在 ROM 里是全零，
+但**真机对应分区本来也是全零** —— 这只能通过先做备份对比才能确认。
+
+4. 刷机中断是「半刷状态」
+
+刷到 `super` 前掉线会必然开不了机（引导链已改但系统没写）。
+处理：**取电池断电 → 重新进 BROM → 从头完整重刷**，`write_parts` 幂等。
+
+5. OpenWrt 第一次重启可能回退
+
+试启动失败会回退 Android，**再重启一次**即可进入。
+
+6. TF 卡有分区会导致安装失败
+
+安装器优先用「第一分区」；若 `p1` 只有几十 MB，会报
+`SD capacity is insufficient`。解决：清空分区表让安装器看到整卡。
+
+### 没有 recovery 入口
+
+70 个分区里**没有 `recovery`**；这台机器用展锐私有 `BCAB` 格式而非 AOSP 标准 AB，
+所以也没有标准 `bootctl`。切换靠 `misc` 控制块 + `e5-bootctl`（支持 `android`/`linux`/`sd`/`arm`/`trial`）。
+
+### 进入 BROM / 下载模式（常见说法）
+
+社区多条教程一致描述：
+
+1. 关机（可拆电池机型建议断电更稳妥）。
+2. 按住「返回 / Back」键，再连接 USB 至电脑（或先按住 Back 再开机，以你使用的 `spd_dump` 脚本说明为准）。
+3. 设备管理器中出现展锐 / Spreadtrum 端口后，在 `spd_dump` 中执行备份或刷写。
+
+> 不同 ROM 包附带的一键脚本按键可能略有差异，**以你下载的刷机包内 BAT / 说明为准**。
+
+### 刷机前建议备份的分区（展锐通用）
+
+参考社区展锐深刷文档，至少关注：`splloader`、`uboot`、`sml`、`trustos`、`vbmeta`、`boot`、`recovery`、`system` 等；条件允许时使用 `r all` 或包内一键备份脚本做全分区备份。详见 KDXF-LEAKiNG Unisoc.md(链接见上文入门一节)。
 
 ## 视频教程(中文)
 
