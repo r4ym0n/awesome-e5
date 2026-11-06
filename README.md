@@ -71,7 +71,7 @@
 
 ### 刷机前建议备份的分区(展锐通用)
 
-参考社区展锐深刷文档,至少关注:`splloader`、`uboot`、`sml`、`trustos`、`vbmeta`、`boot`、`recovery`、`system` 等;条件允许时使用 `r all` 或包内一键备份脚本做全分区备份,详见 [KDXF-LEAKiNG Unisoc.md](https://github.com/ig25138/KDXF-LEAKiNG-Project/blob/main/Unisoc.md)。
+参考社区展锐深刷文档,至少关注:`splloader`、`uboot`、`sml`、`trustos`、`vbmeta`、`boot`、`recovery`、`system` 等;条件允许时使用 `r all` 或包内一键备份脚本做全分区备份,详见 [KDXF-LEAKiNG Unisoc_ud710.md](https://github.com/iflytek-leaking/KDXF-LEAKiNG-Project/blob/main/Unisoc_ud710.md)。
 
 ## 完整实刷记录（原厂 → Magisk → UFI-TOOLS → OpenWrt）
 
@@ -213,7 +213,7 @@ Docker、重度服务基本不现实。
 
 ### 刷机前建议备份的分区（展锐通用）
 
-参考社区展锐深刷文档，至少关注：`splloader`、`uboot`、`sml`、`trustos`、`vbmeta`、`boot`、`recovery`、`system` 等；条件允许时使用 `r all` 或包内一键备份脚本做全分区备份。详见 KDXF-LEAKiNG Unisoc.md(链接见上文入门一节)。
+参考社区展锐深刷文档，至少关注：`splloader`、`uboot`、`sml`、`trustos`、`vbmeta`、`boot`、`recovery`、`system` 等；条件允许时使用 `r all` 或包内一键备份脚本做全分区备份。详见 KDXF-LEAKiNG Unisoc_ud710.md(链接见上文入门一节)。
 
 ## 视频教程(中文)
 
@@ -237,8 +237,41 @@ Docker、重度服务基本不现实。
 | UFI-TOOLS 更新与插件 | [kanokano.cn 网盘](https://pan.kanokano.cn/UFI-TOOLS-UPDATE)                                                                                 | 官方维护的网盘入口                                 |
 | 一键刷分区工具(7z)   | [网盘直链](https://pan.kanokano.cn/d/UFI-TOOLS-UPDATE/%E6%9D%82%E9%A1%B9/%E4%B8%80%E9%94%AE%E5%88%B7%E5%88%86%E5%8C%BA%E5%B7%A5%E5%85%B7.7z) | Root 教程(BV1woo9BPEmg)简介                        |
 | Magisk APK           | [网盘直链](https://pan.kanokano.cn/d/UFI-TOOLS-UPDATE/plugins/Magisk_28103.apk)                                                              | 版本以网盘为准                                     |
-| scrcpy / ADB 工具包  | [网盘目录](https://pan.kanokano.cn/d/UFI-TOOLS-UPDATE/UFI-TOOLS%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85%E5%99%A8/scrcpy)                         | 投屏与调试                                         |
+| scrcpy / ADB 工具包  | [scrcpy-win64-v2.0.7z](https://pan.kanokano.cn/d/UFI-TOOLS-UPDATE/UFI-TOOLS%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85%E5%99%A8/scrcpy-win64-v2.0.7z) | 投屏与调试;同目录亦见一键安装器各平台版本          |
+| UFI-TOOLS Web APK    | [V4.1.5 (2026-09-19)](https://pan.kanokano.cn/d/UFI-TOOLS-UPDATE/UFI-TOOLS_WEB_V4.1.5_20260919_2127.apk)                                      | 网盘根目录的当前 Web 端;版本以网盘为准             |
+| UFI-TOOLS 用户手册   | [用户手册UFI-TOOLS.pdf](https://pan.kanokano.cn/d/UFI-TOOLS-UPDATE/%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8CUFI-TOOLS.pdf)                         | 官方 PDF 手册(约 6 MB),先读再动手                  |
+| UFI 一键安装器       | [网盘目录](https://pan.kanokano.cn/UFI-TOOLS-UPDATE/UFI-TOOLS%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85%E5%99%A8)                                   | 含 Win x32/x64 1.9.2 与 macOS 版                   |
+| 热点优化模块(E5 专用) | [荣悦E5解除热点数量限制+锁5GWIFI信道+固定热点IP模块v4](https://pan.kanokano.cn/UFI-TOOLS-UPDATE/Magisk%E6%A8%A1%E5%9D%97)                      | **v4**(2026-08-18):解热点数量限制 + 锁 5G 信道 + 固定网关;详见下方说明 |
+| 按键修复模块(E5 专用) | [网盘 · Magisk模块](https://pan.kanokano.cn/UFI-TOOLS-UPDATE/Magisk%E6%A8%A1%E5%9D%97)                                                        | `荣悦E5按键修复模块.zip`(约 8.4 MB);实体键映射异常时尝试 |
 | QuTick102 私人空间   | [ysepan](http://qutick102.ysepan.com/)                                                                                                       | 需密码;教程提到的定制 `spd_dump`                   |
+
+### 热点优化模块 v4 说明
+
+`荣悦E5解除热点数量限制+锁5GWIFI信道+固定热点IP模块v4.zip`（2.49 MB）是专为 E5 定制的 Magisk 模块，
+通过 **apex bind mount** 替换系统组件实现三个功能：
+
+| 组件 | 路径 | 作用 |
+| --- | --- | --- |
+| `TetheringGoogle.apk` | `apx/com.android.tethering/priv-app/TetheringGoogle@…/` | 解除热点客户端数量限制（默认 → 10） |
+| `service-wifi.jar` | `apx/com.android.wifi/javalib/` | 锁定 5G WiFi 信道（默认 36） |
+| `NetworkStackGoogle.apk` | `system/priv-app/NetworkStackGoogle/` | 固定热点网关 `192.168.43.1`、USB 共享网关 `192.168.42.1` |
+
+可选配置（在 `/data/` 下创建）：
+
+```sh
+echo 149 > /data/kano_ap_channel.cfg   # 信道,建议 36 或 149
+echo 600 > /data/kano_softap_timeout   # 无连接自动关闭(秒),默认不关
+echo 1   > /data/kano_is_hidden_ssid   # 隐藏 SSID
+```
+
+重启生效。验证替换是否成功：
+
+```sh
+su -c 'mount | grep tethering'
+# 期望看到 /dev/block/mmcblk0p70(= userdata)挂在 TetheringGoogle.apk 上
+```
+
+> v4 相比 v3 增加了 `NetworkStackGoogle.apk`（固定网关）。旧版只解限制 + 锁信道。
 
 网盘链接可能随时间失效,欢迎在 Issue 中提交可用镜像。
 
@@ -259,10 +292,37 @@ Docker、重度服务基本不现实。
 | action_spd_dump_it              | [TomKing062/action_spd_dump_it](https://github.com/TomKing062/action_spd_dump_it)                           | 闭源分支,支持 `pac` 等扩展命令                |
 | spreadtrum_flash(ilyakurdyukov) | [releases](https://github.com/ilyakurdyukov/spreadtrum_flash/releases)                                      | 另一套维护与 `spd_dump64.zip`                 |
 | SPRDClient                      | [YC-nw](https://github.com/YC-nw)                                                                           | 展锐工具链作者(社区致谢)                      |
-| 紫光 USB 驱动                   | 各教程包内常带 `SPRD_Driver_R4.x`;亦见 Unisoc.md 配套驱动说明(链接见上文备份分区一节)                       | Windows 刷机前安装                            |
+| 紫光 USB 驱动                   | 各教程包内常带 `SPRD_Driver_R4.x`(官改包的 `刷机驱动_SPD_Driver_R4.20.4201/`)                            | Windows 刷机前安装;**必须管理员**执行 `pnputil /add-driver` |
 | spd_dump-macos                  | [xun404/spd_dump-macos](https://github.com/xun404/spd_dump-macos)                                           | T158 验证的 macOS 移植;见 macOS 刷机说明      |
 | sfd_tool                        | [C-Hidery/sfd_tool](https://github.com/C-Hidery/sfd_tool)                                                   | 跨平台(含 macOS)展锐维护工具                  |
 
+### ⚠️ 两版 `spd_dump` 不可混用
+
+e5-tools 等工具包里通常同时提供两个构建,能力不同:
+
+| | `spd_dump_SPRD_Release` | `spd_dump_LibUSB_Release` |
+| --- | --- | --- |
+| 版本标识 | `ver:228`(定制) | `branch:stable` |
+| 文件大小 | 82432 B | 82944 B |
+| 依赖驱动 | **需装 SPRD 驱动**(`sprdvcom.inf`) | 免驱动(WinUSB/libusb) |
+| 私有命令 `exec_addr2` | ✅ 支持 | ❌ 只有 `exec_addr` |
+| `--kickto` | ✅ | ✅ |
+
+**这条会直接决定刷机能否成功**：
+
+- 官改包的一键脚本用 `exec_addr2 0x65017f08`，**必须用 SPRD 版 + 装驱动**
+- 用 LibUSB stable 版跑同一条命令会报「未知命令」或等待超时
+
+### ⚠️ `custom_exec` 文件地址必须与 FDL 匹配
+
+`custom_exec_no_verify_<地址>.bin` 的文件名里带地址，**不能张冠李戴**：
+
+| 来源 | 文件名里的地址 | 对应参数 |
+| --- | --- | --- |
+| 官改包 `bin/` | `65017f08` | `exec_addr2 0x65017f08` |
+| e5-tools `spd_dump_SPRD_Release/` | `65012f48` | 只适用于配对的 FDL |
+
+用哪个 FDL 就必须配对应地址的 `custom_exec`。混用会导致 BROM 签名校验绕过失败。
 常用命令形态(仅作索引,**以工具 `--help` 为准**):
 
 ```text
@@ -320,7 +380,7 @@ MIFIPK 荣悦-E5 收录了在 UFI-TOOLS 等环境下的测速、延迟与 **5G/4
 
 ## 通用展锐教程(可借鉴)
 
-- ig25138 / KDXF-LEAKiNG-Project - Unisoc.md - 驱动、`spd_dump`、备份与 `w system` 等命令详解(面向学习机/UD710 等,思路可迁移,**FDL 与分区表勿照搬**);链接见上文备份分区一节。
+- [iflytek-leaking / KDXF-LEAKiNG-Project](https://github.com/iflytek-leaking/KDXF-LEAKiNG-Project) - Unisoc_ud710.md 等:驱动、`spd_dump`、备份与 `w system` 等命令详解(面向 UD710/ums9620 等,思路可迁移,**FDL 与分区表勿照搬**)。仓库已从 `ig25138` 迁移至此。
 
 ## 相关 GitHub 项目
 
