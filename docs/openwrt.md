@@ -43,7 +43,7 @@
 | --- | --- | --- |
 | **QuTick102 工具/资源** | http://qutick102.ysepan.com/ | 需密码；定制 `spd_dump` 常由此体系分发 |
 | **官改 Android（非 OpenWrt，但同工具链）** | https://1816129281.share.123pan.cn/123pan/7oa5Vv-4vx03 | [MiniKano 教程](https://www.bilibili.com/video/BV1e65y69E3L/) 引用；可先熟悉 BROM 与 spd_dump |
-| **展锐通用刷机知识** | [Unisoc.md](https://github.com/ig25138/KDXF-LEAKiNG-Project/blob/main/Unisoc.md) | 驱动、备份命令思路；**FDL 勿照搬** |
+| **展锐通用刷机知识** | [Unisoc_ud710.md](https://github.com/iflytek-leaking/KDXF-LEAKiNG-Project/blob/main/Unisoc_ud710.md) | 驱动、备份命令思路；**FDL 勿照搬** |
 | **开源 spd_dump（参考）** | [TomKing062/spreadtrum_flash](https://github.com/TomKing062/spreadtrum_flash) | e5-linux 教程多用 QuTick102 闭源/定制版，与开源版命令可能不完全一致 |
 | **e5-linux 源码/发布** | _见 BV1htpJ6NECu 简介_ | 固定 GitHub URL 易变；若你找到稳定仓库链接，欢迎向本仓库 PR 补充 |
 
@@ -95,7 +95,7 @@ flowchart TD
 
 ### 2. 安装驱动
 
-- 运行包内或 [Unisoc.md](https://github.com/ig25138/KDXF-LEAKiNG-Project/blob/main/Unisoc.md) 提到的 **DPInst64** 安装展锐驱动。
+- 运行包内或 [Unisoc_ud710.md](https://github.com/iflytek-leaking/KDXF-LEAKiNG-Project/blob/main/Unisoc_ud710.md) 提到的 **DPInst64** 安装展锐驱动。
 - 设备管理器中 BROM 下应出现 Spreadtrum / UNISOC 相关端口（而非未知 USB 设备）。
 
 ### 3. 进入 BROM（下载模式）
